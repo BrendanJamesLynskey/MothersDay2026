@@ -2,6 +2,8 @@
 
 A cute chicken-themed memory matching game, built as a Mother's Day gift.
 
+**Play it here:** [brendanjameslynskey.github.io/MothersDay2026](https://brendanjameslynskey.github.io/MothersDay2026/)
+
 ## How to Play
 
 Flip cards to reveal chickens and find matching pairs. The fewer moves you take, the more stars you earn! Complete puzzles to collect decorative eggs for your nest.
@@ -35,7 +37,7 @@ python3 -m http.server
 1. Push this repo to GitHub
 2. Go to **Settings > Pages**
 3. Set source to the `main` branch and root (`/`)
-4. The game will be available at `https://<username>.github.io/<repo-name>/`
+4. The game will be available at https://brendanjameslynskey.github.io/MothersDay2026/
 
 ## License
 
