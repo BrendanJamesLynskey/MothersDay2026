@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Helen's Clucky Match - Chicken Puzzle Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    background: linear-gradient(180deg, #87CEEB 0%, #98e4a8 60%, #7bc47b 100%);
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  html { height: -webkit-fill-available; }
+
+  .clouds { position: fixed; top: 0; left: 0; width: 100%; height: 200px; pointer-events: none; z-index: 0; }
+  .cloud { position: absolute; background: white; border-radius: 50%; opacity: 0.8; }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: white; border-radius: 50%; }
+  .cloud:nth-child(1) { width: 120px; height: 50px; top: 30px; animation: drift 25s linear infinite; }
+  .cloud:nth-child(1)::before { width: 60px; height: 60px; top: -30px; left: 20px; }
+  .cloud:nth-child(1)::after { width: 80px; height: 50px; top: -20px; left: 50px; }
+  .cloud:nth-child(2) { width: 100px; height: 40px; top: 80px; animation: drift 35s linear infinite; animation-delay: -10s; }
+  .cloud:nth-child(2)::before { width: 50px; height: 50px; top: -25px; left: 15px; }
+  .cloud:nth-child(2)::after { width: 70px; height: 45px; top: -18px; left: 40px; }
+  .cloud:nth-child(3) { width: 90px; height: 35px; top: 50px; animation: drift 30s linear infinite; animation-delay: -20s; }
+  .cloud:nth-child(3)::before { width: 45px; height: 45px; top: -22px; left: 12px; }
+  .cloud:nth-child(3)::after { width: 60px; height: 38px; top: -15px; left: 35px; }
+  @keyframes drift { from { left: -200px; } to { left: 110%; } }
+
+  .header { position: relative; z-index: 1; text-align: center; padding: 25px 20px 10px; }
+  .header h1 {
+    font-family: 'Fredoka One', cursive; font-size: 2.8em; color: #fff;
+    text-shadow: 3px 3px 0 #e8872a, -1px -1px 0 #e8872a, 1px -1px 0 #e8872a, -1px 1px 0 #e8872a;
+    letter-spacing: 2px;
+  }
+  .header .subtitle { font-size: 1.1em; color: #3a6b35; font-weight: 700; margin-top: 2px; }
+  .header .dedication {
+    font-size: 0.85em; color: #5a3e1b; font-weight: 700; margin-top: 4px;
+    font-style: italic; opacity: 0.8;
+  }
+
+  .stats { position: relative; z-index: 1; display: flex; gap: 20px; margin: 10px 0 15px; flex-wrap: wrap; justify-content: center; }
+  .stat {
+    background: rgba(255,255,255,0.85); border-radius: 20px; padding: 8px 20px;
+    font-weight: 700; color: #5a3e1b; box-shadow: 0 3px 10px rgba(0,0,0,0.1); font-size: 1em;
+  }
+
+  .level-select { position: relative; z-index: 1; display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
+  .level-btn {
+    background: #f9a825; border: none; border-radius: 15px; padding: 8px 18px;
+    font-family: 'Fredoka One', cursive; font-size: 0.95em; color: white;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 0 #e08a1e;
+    touch-action: manipulation;
+  }
+  .level-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #e08a1e; }
+  .level-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #e08a1e; }
+  .level-btn.active { background: #ff6f00; box-shadow: 0 4px 0 #c75400; }
+
+  .board {
+    position: relative; z-index: 1; display: grid; gap: 12px; padding: 20px;
+    background: rgba(139, 90, 43, 0.3); border-radius: 25px;
+    border: 4px solid rgba(139, 90, 43, 0.4); max-width: 620px; margin: 0 auto;
+  }
+  .board.size-4 { grid-template-columns: repeat(4, 1fr); }
+  .board.size-6 { grid-template-columns: repeat(4, 1fr); }
+  .board.size-8 { grid-template-columns: repeat(4, 1fr); }
+  .board.size-12 { grid-template-columns: repeat(6, 1fr); max-width: 750px; }
+  .board.size-16 { grid-template-columns: repeat(8, 1fr); max-width: 900px; }
+  .board.size-12 .card, .board.size-16 .card { width: 90px; height: 115px; }
+  .board.size-12 .chicken-holder svg, .board.size-16 .chicken-holder svg { width: 62px; height: 70px; }
+  .board.size-12 .chicken-name, .board.size-16 .chicken-name { font-size: 0.55em; }
+  .board.size-12 .chicken-breed, .board.size-16 .chicken-breed { font-size: 0.42em; }
+  .board.size-12 .card-back .egg, .board.size-16 .card-back .egg { font-size: 2.2em; }
+  .board.size-12 .card-back .q-mark, .board.size-16 .card-back .q-mark { font-size: 0.7em; }
+
+  .card { width: 115px; height: 140px; perspective: 800px; cursor: pointer; touch-action: manipulation; }
+  .card-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner, .card.matched .card-inner { transform: rotateY(180deg); }
+
+  .card-front, .card-back {
+    position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+    border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-direction: column;
+  }
+
+  .card-back {
+    background: linear-gradient(145deg, #ff9800, #f57c00); border: 3px solid #e65100;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.3);
+  }
+  .card-back .egg { font-size: 3em; animation: wobble 2s ease-in-out infinite; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
+  .card-back .q-mark { font-family: 'Fredoka One', cursive; color: rgba(255,255,255,0.6); font-size: 1em; margin-top: 2px; }
+  @keyframes wobble { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+  .card-front {
+    background: linear-gradient(145deg, #fff9e6, #fff3cc); border: 3px solid #ffe082;
+    transform: rotateY(180deg); box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.5);
+    padding: 4px;
+  }
+  .card.matched .card-front {
+    background: linear-gradient(145deg, #e8f5e9, #c8e6c9); border-color: #81c784;
+    animation: matchPop 0.5s ease;
+  }
+  @keyframes matchPop {
+    0% { transform: rotateY(180deg) scale(1); }
+    50% { transform: rotateY(180deg) scale(1.15); }
+    100% { transform: rotateY(180deg) scale(1); }
+  }
+
+  .chicken-holder { display: flex; align-items: center; justify-content: center; }
+  .chicken-holder svg { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.12)); }
+  .chicken-name {
+    font-size: 0.65em; font-weight: 700; color: #5a3e1b; margin-top: 1px; text-align: center; line-height: 1.1;
+  }
+  .chicken-breed {
+    font-size: 0.5em; font-weight: 400; color: #8b7355; text-align: center;
+  }
+
+  .win-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;
+  }
+  .win-overlay.show { display: flex; }
+  .win-box {
+    background: linear-gradient(145deg, #fff9e6, #fff3cc); border-radius: 30px;
+    padding: 40px 50px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); border: 4px solid #ffe082;
+    max-width: 90vw; max-height: 90vh; overflow-y: auto;
+  }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .win-box h2 { font-family: 'Fredoka One', cursive; color: #e8872a; font-size: 2.2em; margin-bottom: 10px; }
+  .win-box .win-chick { font-size: 4em; margin: 10px 0; }
+  .win-box p { color: #5a3e1b; font-weight: 700; font-size: 1.1em; white-space: pre-line; }
+  .win-box .stars { font-size: 2em; margin: 10px 0; }
+  .play-again {
+    margin-top: 20px; background: linear-gradient(145deg, #66bb6a, #43a047); border: none;
+    border-radius: 20px; padding: 12px 35px; font-family: 'Fredoka One', cursive;
+    font-size: 1.2em; color: white; cursor: pointer; box-shadow: 0 5px 0 #2e7d32; transition: all 0.2s;
+    touch-action: manipulation;
+  }
+  .play-again:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #2e7d32; }
+  .play-again:active { transform: translateY(2px); box-shadow: 0 3px 0 #2e7d32; }
+
+  /* Egg collection nest */
+  .egg-collection {
+    position: relative; z-index: 1; margin: 10px auto 0; max-width: 620px; width: 100%;
+  }
+  .nest-label {
+    font-family: 'Fredoka One', cursive; font-size: 1em; color: #5a3e1b;
+    text-align: center; margin-bottom: 6px;
+  }
+  .nest {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+    background: radial-gradient(ellipse at 50% 80%, #c9a96e 0%, #a67c52 60%, transparent 72%);
+    border-radius: 50%; min-height: 50px; padding: 12px 20px 18px;
+    position: relative;
+  }
+  .nest::before {
+    content: ''; position: absolute; bottom: -4px; left: 10%; right: 10%; height: 14px;
+    background: #b5894d; border-radius: 0 0 50% 50%; z-index: -1;
+  }
+  .nest-egg {
+    width: 32px; height: 40px; cursor: pointer; transition: transform 0.2s;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+  }
+  .nest-egg:hover { transform: scale(1.2) rotate(-5deg); }
+  .nest-empty { font-size: 0.8em; color: #8b7355; padding: 10px; font-style: italic; }
+
+  /* Win egg reveal */
+  .egg-prize { margin: 12px auto; text-align: center; }
+  .egg-prize-label {
+    font-family: 'Fredoka One', cursive; font-size: 0.95em; color: #5a3e1b; margin-bottom: 4px;
+  }
+  .egg-prize svg {
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+    animation: eggAppear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  @keyframes eggAppear {
+    0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .egg-prize-name {
+    font-size: 0.75em; font-weight: 700; color: #8b7355; margin-top: 2px;
+  }
+
+  /* Tooltip for nest eggs */
+  .egg-tooltip {
+    display: none; position: fixed; z-index: 200;
+    background: #fff9e6; border: 2px solid #ffe082; border-radius: 12px;
+    padding: 8px 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    pointer-events: none; font-size: 0.8em; font-weight: 700; color: #5a3e1b;
+    white-space: nowrap;
+  }
+  .egg-tooltip.show { display: block; }
+
+  .feather { position: fixed; font-size: 1.5em; pointer-events: none; z-index: 0; opacity: 0.6; animation: featherFall linear infinite; }
+  @keyframes featherFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.6; } 90% { opacity: 0.6; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+
+  .fence { position: relative; z-index: 1; display: flex; justify-content: center; margin-top: 15px; margin-bottom: 5px; gap: 0; }
+  .fence-post { width: 12px; height: 35px; background: linear-gradient(90deg, #c9a96e, #b5894d); border-radius: 3px 3px 0 0; }
+  .fence-rail { width: 40px; height: 6px; background: linear-gradient(180deg, #c9a96e, #b5894d); border-radius: 2px; align-self: center; margin-top: 5px; }
+
+  @media (max-width: 750px) {
+    .board.size-12 { max-width: 520px; grid-template-columns: repeat(4, 1fr); }
+    .board.size-16 { max-width: 600px; grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 550px) {
+    .card { width: 78px; height: 105px; }
+    .chicken-holder svg { transform: scale(0.7); }
+    .board { gap: 8px; padding: 12px; }
+    .header h1 { font-size: 2em; }
+    .chicken-name { font-size: 0.55em; }
+    .board.size-12 .card, .board.size-16 .card { width: 70px; height: 95px; }
+    .board.size-12 .chicken-holder svg, .board.size-16 .chicken-holder svg { width: 48px; height: 54px; }
+  }
+
+  /* iPhone SE / small phones */
+  @media (max-width: 400px) {
+    .header { padding: 15px 12px 6px; }
+    .header h1 { font-size: 1.7em; }
+    .header .subtitle { font-size: 0.95em; }
+    .header .dedication { font-size: 0.78em; }
+    .stats { gap: 10px; margin: 6px 0 10px; }
+    .stat { padding: 6px 14px; font-size: 0.85em; }
+    .level-select { gap: 6px; margin-bottom: 10px; }
+    .level-btn { padding: 6px 12px; font-size: 0.8em; }
+    .board { gap: 6px; padding: 8px; border-radius: 18px; }
+    .card { width: 70px; height: 95px; }
+    .chicken-holder svg { transform: scale(0.6); }
+    .chicken-name { font-size: 0.5em; }
+    .chicken-breed { font-size: 0.38em; }
+    .card-back .egg { font-size: 2.2em; }
+    .card-back .q-mark { font-size: 0.65em; }
+    .board.size-4 { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+    .board.size-6 { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+    .board.size-8 { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+    .board.size-12 { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+    .board.size-12 .card, .board.size-16 .card { width: 62px; height: 85px; }
+    .board.size-12 .chicken-holder svg, .board.size-16 .chicken-holder svg { width: 42px; height: 48px; }
+    .board.size-16 { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+    .fence { margin-top: 8px; }
+    .fence-post { width: 8px; height: 24px; }
+    .fence-rail { width: 28px; height: 4px; }
+    .win-box { padding: 25px 20px; border-radius: 22px; margin: 10px; }
+    .win-box h2 { font-size: 1.6em; }
+    .win-box .win-chick { font-size: 2.8em; }
+    .win-box p { font-size: 0.95em; }
+    .nest-label { font-size: 0.85em; }
+    .egg-collection { margin-top: 6px; }
+  }
+
+  /* Landscape on phones */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .header { padding: 8px 12px 4px; }
+    .header h1 { font-size: 1.5em; }
+    .clouds { height: 100px; }
+    .fence { display: none; }
+    .stats { margin: 4px 0 6px; }
+    .board { gap: 5px; padding: 8px; }
+    .card { width: 60px; height: 80px; }
+    .chicken-holder svg { transform: scale(0.55); }
+    .egg-collection { margin-top: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="clouds"><div class="cloud"></div><div class="cloud"></div><div class="cloud"></div></div>
+
+<div class="header">
+  <h1>Helen's Clucky Match!</h1>
+  <div class="subtitle">Find all the chicken pairs!</div>
+  <div class="dedication">To Helen on Mother's Day, with love from J&amp;J</div>
+</div>
+
+<div class="stats">
+  <div class="stat" id="moves-stat">Moves: 0</div>
+  <div class="stat" id="pairs-stat">Pairs: 0 / 0</div>
+  <div class="stat" id="time-stat">Time: 0s</div>
+</div>
+
+<div class="level-select">
+  <button class="level-btn active" onclick="startGame(4)">Easy (4 pairs)</button>
+  <button class="level-btn" onclick="startGame(6)">Medium (6 pairs)</button>
+  <button class="level-btn" onclick="startGame(8)">Hard (8 pairs)</button>
+  <button class="level-btn" onclick="startGame(12)">Expert (12 pairs)</button>
+  <button class="level-btn" onclick="startGame(16)">Extreme (16 pairs)</button>
+</div>
+
+<div class="fence">
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div>
+</div>
+
+<div class="board size-4" id="board"></div>
+
+<div class="fence" style="margin-top: 5px; margin-bottom: 20px;">
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div><div class="fence-rail"></div>
+  <div class="fence-post"></div>
+</div>
+
+<div class="egg-collection">
+  <div class="nest-label">Helen's Egg Collection</div>
+  <div class="nest" id="nest"></div>
+</div>
+
+<div class="egg-tooltip" id="egg-tooltip"></div>
+
+<div class="win-overlay" id="win-overlay">
+  <div class="win-box">
+    <h2>Well Done, Helen!</h2>
+    <div class="win-chick">🐔🎉🐔</div>
+    <div class="stars" id="stars"></div>
+    <div class="egg-prize" id="egg-prize"></div>
+    <p id="win-msg"></p>
+    <button class="play-again" onclick="restartGame()">Play Again!</button>
+  </div>
+</div>
+
+<script>
+// ── Egg collection system ─────────────────────────────────────────
+
+const EGG_TYPES = [
+  // Easy eggs - simple pastel
+  { name: "Speckled Egg", diff: 4, base: "#FDEFCF", spot: "#D4A56A", accent: "#E8C88A", pattern: "speckled" },
+  { name: "Sky Egg", diff: 4, base: "#D4ECFC", spot: "#8BB8D9", accent: "#A8D4F0", pattern: "speckled" },
+  { name: "Rose Egg", diff: 4, base: "#FCE4EC", spot: "#E8909C", accent: "#F4B8C1", pattern: "speckled" },
+  { name: "Mint Egg", diff: 4, base: "#E0F2E9", spot: "#7CB89C", accent: "#A8D8BE", pattern: "speckled" },
+  // Medium eggs - striped
+  { name: "Sunset Egg", diff: 6, base: "#FFE0B2", spot: "#FF8A65", accent: "#FFAB91", pattern: "striped" },
+  { name: "Ocean Egg", diff: 6, base: "#B2EBF2", spot: "#00ACC1", accent: "#4DD0E1", pattern: "striped" },
+  { name: "Lavender Egg", diff: 6, base: "#E8DAF0", spot: "#AB68C8", accent: "#CE93D8", pattern: "striped" },
+  { name: "Meadow Egg", diff: 6, base: "#DCEDC8", spot: "#7CB342", accent: "#AED581", pattern: "striped" },
+  // Hard eggs - polka dots
+  { name: "Party Egg", diff: 8, base: "#FFF9C4", spot: "#FF6F00", accent: "#E91E63", pattern: "polka" },
+  { name: "Berry Egg", diff: 8, base: "#F3E5F5", spot: "#8E24AA", accent: "#E040FB", pattern: "polka" },
+  { name: "Coral Egg", diff: 8, base: "#FBE9E7", spot: "#FF5722", accent: "#FF8A65", pattern: "polka" },
+  { name: "Forest Egg", diff: 8, base: "#E8F5E9", spot: "#2E7D32", accent: "#66BB6A", pattern: "polka" },
+  // Expert eggs - zigzag
+  { name: "Thunder Egg", diff: 12, base: "#ECEFF1", spot: "#FFD600", accent: "#546E7A", pattern: "zigzag" },
+  { name: "Flame Egg", diff: 12, base: "#FFF3E0", spot: "#FF3D00", accent: "#FF9100", pattern: "zigzag" },
+  { name: "Arctic Egg", diff: 12, base: "#E1F5FE", spot: "#0288D1", accent: "#81D4FA", pattern: "zigzag" },
+  { name: "Jungle Egg", diff: 12, base: "#F1F8E9", spot: "#33691E", accent: "#9CCC65", pattern: "zigzag" },
+  // Extreme eggs - golden / rainbow
+  { name: "Golden Egg", diff: 16, base: "#FFF8E1", spot: "#FFD700", accent: "#FFA000", pattern: "golden" },
+  { name: "Rainbow Egg", diff: 16, base: "#FFFFFF", spot: "#E91E63", accent: "#2196F3", pattern: "rainbow" },
+  { name: "Crystal Egg", diff: 16, base: "#E8EAF6", spot: "#7C4DFF", accent: "#448AFF", pattern: "crystal" },
+  { name: "Dragon Egg", diff: 16, base: "#263238", spot: "#FF6D00", accent: "#FF3D00", pattern: "dragon" },
+];
+
+function getEggSvg(egg, size = 32) {
+  const w = size, h = size * 1.25;
+  const cx = w / 2, rx = w * 0.42, ry = h * 0.45, cy = h * 0.48;
+
+  let patternSvg = '';
+  if (egg.pattern === 'speckled') {
+    for (let i = 0; i < 8; i++) {
+      const sx = cx + (Math.sin(i * 2.3) * rx * 0.6);
+      const sy = cy + (Math.cos(i * 1.7) * ry * 0.5);
+      patternSvg += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${1 + Math.random()}" fill="${egg.spot}" opacity="0.6"/>`;
+    }
+  } else if (egg.pattern === 'striped') {
+    for (let i = -2; i <= 2; i++) {
+      const y = cy + i * (ry * 0.3);
+      patternSvg += `<ellipse cx="${cx}" cy="${y.toFixed(1)}" rx="${rx * 0.8}" ry="${ry * 0.06}" fill="${i % 2 ? egg.spot : egg.accent}" opacity="0.5"/>`;
+    }
+  } else if (egg.pattern === 'polka') {
+    const positions = [[0.3,0.35],[0.7,0.35],[0.5,0.55],[0.3,0.7],[0.7,0.7],[0.5,0.3]];
+    positions.forEach(([px, py], i) => {
+      patternSvg += `<circle cx="${(w * px).toFixed(1)}" cy="${(h * py).toFixed(1)}" r="${w * 0.06}" fill="${i % 2 ? egg.spot : egg.accent}" opacity="0.6"/>`;
+    });
+  } else if (egg.pattern === 'zigzag') {
+    let d = `M ${cx - rx * 0.7} ${cy - ry * 0.1}`;
+    for (let i = 0; i < 6; i++) {
+      const x = cx - rx * 0.7 + (i + 1) * (rx * 1.4 / 6);
+      const y = cy + (i % 2 ? -1 : 1) * ry * 0.15;
+      d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    patternSvg += `<path d="${d}" stroke="${egg.spot}" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+    let d2 = `M ${cx - rx * 0.6} ${cy + ry * 0.2}`;
+    for (let i = 0; i < 5; i++) {
+      const x = cx - rx * 0.6 + (i + 1) * (rx * 1.2 / 5);
+      const y = cy + ry * 0.2 + (i % 2 ? -1 : 1) * ry * 0.12;
+      d2 += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    patternSvg += `<path d="${d2}" stroke="${egg.accent}" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.6"/>`;
+  } else if (egg.pattern === 'golden') {
+    patternSvg += `<ellipse cx="${cx}" cy="${cy}" rx="${rx * 0.7}" ry="${ry * 0.7}" fill="url(#goldShine${size})" opacity="0.5"/>`;
+    patternSvg += `<defs><radialGradient id="goldShine${size}"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/><stop offset="100%" stop-color="#FFD700" stop-opacity="0"/></radialGradient></defs>`;
+    patternSvg += `<ellipse cx="${cx * 0.7}" cy="${cy * 0.6}" rx="${rx * 0.2}" ry="${ry * 0.15}" fill="white" opacity="0.5" transform="rotate(-20 ${cx * 0.7} ${cy * 0.6})"/>`;
+  } else if (egg.pattern === 'rainbow') {
+    const colors = ['#E91E63','#FF9800','#FFEB3B','#4CAF50','#2196F3','#9C27B0'];
+    colors.forEach((c, i) => {
+      const y = cy - ry * 0.4 + i * (ry * 0.15);
+      patternSvg += `<ellipse cx="${cx}" cy="${y.toFixed(1)}" rx="${rx * 0.85}" ry="${ry * 0.05}" fill="${c}" opacity="0.45"/>`;
+    });
+  } else if (egg.pattern === 'crystal') {
+    const pts = [[0.3,0.3],[0.65,0.25],[0.5,0.5],[0.35,0.65],[0.6,0.6],[0.45,0.4]];
+    pts.forEach(([px, py]) => {
+      const x = w * px, y = h * py, s = w * 0.08;
+      patternSvg += `<polygon points="${x},${y - s} ${x + s * 0.8},${y} ${x},${y + s * 0.6} ${x - s * 0.8},${y}" fill="${egg.spot}" opacity="0.35"/>`;
+    });
+    patternSvg += `<ellipse cx="${cx * 0.75}" cy="${cy * 0.65}" rx="${rx * 0.15}" ry="${ry * 0.1}" fill="white" opacity="0.6" transform="rotate(-25 ${cx * 0.75} ${cy * 0.65})"/>`;
+  } else if (egg.pattern === 'dragon') {
+    for (let i = 0; i < 5; i++) {
+      const angle = i * 1.2 + 0.5;
+      const sx = cx + Math.sin(angle) * rx * 0.5;
+      const sy = cy + Math.cos(angle) * ry * 0.4;
+      patternSvg += `<polygon points="${sx},${sy - 3} ${sx + 2.5},${sy + 1.5} ${sx - 2.5},${sy + 1.5}" fill="${egg.spot}" opacity="0.7"/>`;
+    }
+    patternSvg += `<ellipse cx="${cx * 0.8}" cy="${cy * 0.7}" rx="${rx * 0.12}" ry="${ry * 0.08}" fill="${egg.accent}" opacity="0.6"/>`;
+  }
+
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${egg.base}" stroke="${egg.accent}" stroke-width="0.8"/>
+    ${patternSvg}
+    <ellipse cx="${cx * 0.78}" cy="${cy * 0.7}" rx="${rx * 0.18}" ry="${ry * 0.12}" fill="white" opacity="0.35" transform="rotate(-20 ${cx * 0.78} ${cy * 0.7})"/>
+  </svg>`;
+}
+
+function loadEggCollection() {
+  try { return JSON.parse(localStorage.getItem('clucky_eggs') || '[]'); }
+  catch { return []; }
+}
+
+function saveEggCollection(eggs) {
+  localStorage.setItem('clucky_eggs', JSON.stringify(eggs));
+}
+
+function renderNest() {
+  const nest = document.getElementById('nest');
+  const eggs = loadEggCollection();
+  if (eggs.length === 0) {
+    nest.innerHTML = '<div class="nest-empty">Complete a puzzle to earn your first egg, Helen!</div>';
+    return;
+  }
+  nest.innerHTML = '';
+  eggs.forEach((egg, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'nest-egg';
+    wrapper.innerHTML = getEggSvg(egg, 32);
+    wrapper.addEventListener('mouseenter', (e) => showEggTooltip(e, egg));
+    wrapper.addEventListener('mousemove', (e) => moveEggTooltip(e));
+    wrapper.addEventListener('mouseleave', hideEggTooltip);
+    wrapper.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      showEggTooltip(touch, egg);
+      moveEggTooltip(touch);
+      setTimeout(hideEggTooltip, 1500);
+    }, { passive: false });
+    nest.appendChild(wrapper);
+  });
+}
+
+function showEggTooltip(e, egg) {
+  const tip = document.getElementById('egg-tooltip');
+  tip.textContent = `${egg.name} (${egg.levelName})`;
+  tip.classList.add('show');
+  moveEggTooltip(e);
+}
+function moveEggTooltip(e) {
+  const tip = document.getElementById('egg-tooltip');
+  tip.style.left = (e.clientX + 12) + 'px';
+  tip.style.top = (e.clientY - 30) + 'px';
+}
+function hideEggTooltip() {
+  document.getElementById('egg-tooltip').classList.remove('show');
+}
+
+function awardEgg() {
+  const levelNames = { 4: 'Easy', 6: 'Medium', 8: 'Hard', 12: 'Expert', 16: 'Extreme' };
+  const available = EGG_TYPES.filter(e => e.diff === gameState.pairs);
+  const egg = { ...available[Math.floor(Math.random() * available.length)] };
+  egg.levelName = levelNames[gameState.pairs] || '???';
+  egg.wonAt = Date.now();
+
+  const eggs = loadEggCollection();
+  eggs.push(egg);
+  saveEggCollection(eggs);
+
+  // Show egg in win screen
+  const prizeEl = document.getElementById('egg-prize');
+  prizeEl.innerHTML = `
+    <div class="egg-prize-label">You earned an egg!</div>
+    ${getEggSvg(egg, 56)}
+    <div class="egg-prize-name">${egg.name}</div>
+  `;
+
+  renderNest();
+}
+
+// ── SVG chicken builders ──────────────────────────────────────────
+// Each returns an SVG string. All fit in an 80x90 viewBox.
+
+function svgChick(name, bodyColor, highlight, blushColor) {
+  // Tiny round baby chick - small, fluffy, huge eyes, no comb
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- fluffy body -->
+    <ellipse cx="40" cy="62" rx="24" ry="22" fill="${bodyColor}"/>
+    <ellipse cx="40" cy="58" rx="22" ry="18" fill="${highlight}"/>
+    <!-- fluffy head -->
+    <circle cx="40" cy="38" r="18" fill="${bodyColor}"/>
+    <circle cx="40" cy="36" r="16" fill="${highlight}"/>
+    <!-- tuft on head -->
+    <ellipse cx="40" cy="20" rx="4" ry="7" fill="${bodyColor}" transform="rotate(-10 40 20)"/>
+    <ellipse cx="44" cy="21" rx="3" ry="6" fill="${highlight}" transform="rotate(10 44 21)"/>
+    <!-- big cute eyes -->
+    <ellipse cx="33" cy="35" rx="5" ry="5.5" fill="#1a1a2e"/>
+    <ellipse cx="47" cy="35" rx="5" ry="5.5" fill="#1a1a2e"/>
+    <circle cx="31" cy="33" r="2" fill="white"/>
+    <circle cx="45" cy="33" r="2" fill="white"/>
+    <circle cx="34" cy="37" r="1" fill="white" opacity="0.5"/>
+    <circle cx="48" cy="37" r="1" fill="white" opacity="0.5"/>
+    <!-- tiny beak -->
+    <polygon points="38,42 42,42 40,46" fill="#FF8F00"/>
+    <!-- blush -->
+    <ellipse cx="27" cy="40" rx="4" ry="2.5" fill="${blushColor}" opacity="0.5"/>
+    <ellipse cx="53" cy="40" rx="4" ry="2.5" fill="${blushColor}" opacity="0.5"/>
+    <!-- tiny wings -->
+    <ellipse cx="18" cy="60" rx="8" ry="12" fill="${bodyColor}" transform="rotate(15 18 60)"/>
+    <ellipse cx="62" cy="60" rx="8" ry="12" fill="${bodyColor}" transform="rotate(-15 62 60)"/>
+    <!-- tiny feet -->
+    <line x1="34" y1="82" x2="30" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="34" y1="88" x2="28" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="34" y1="88" x2="36" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="46" y1="82" x2="50" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="46" y1="88" x2="52" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="46" y1="88" x2="44" y2="88" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgRooster(name, bodyColor, breastColor, tailColors, combColor, wattleColor) {
+  // Tall, proud rooster with big tail feathers, large comb and wattle
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- tall tail feathers -->
+    <path d="M58,50 Q75,30 70,10" stroke="${tailColors[0]}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M55,52 Q78,35 68,15" stroke="${tailColors[1]}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M56,55 Q80,42 72,22" stroke="${tailColors[2]}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M54,48 Q70,25 62,8" stroke="${tailColors[0]}" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <!-- body -->
+    <ellipse cx="38" cy="60" rx="22" ry="20" fill="${bodyColor}"/>
+    <ellipse cx="35" cy="58" rx="18" ry="16" fill="${breastColor}"/>
+    <!-- wing -->
+    <ellipse cx="50" cy="58" rx="12" ry="16" fill="${bodyColor}" opacity="0.8"/>
+    <path d="M45,50 Q55,55 52,68 Q48,72 42,65" fill="${tailColors[1]}" opacity="0.3"/>
+    <!-- neck -->
+    <ellipse cx="30" cy="42" rx="10" ry="14" fill="${bodyColor}"/>
+    <!-- head -->
+    <circle cx="28" cy="30" r="12" fill="${bodyColor}"/>
+    <!-- big comb -->
+    <path d="M20,22 Q22,10 26,18 Q28,8 32,16 Q35,10 36,20 L36,26 Q30,28 22,26 Z" fill="${combColor}"/>
+    <!-- eye -->
+    <ellipse cx="24" cy="29" rx="3.5" ry="4" fill="#1a1a2e"/>
+    <circle cx="23" cy="28" r="1.5" fill="white"/>
+    <!-- beak -->
+    <polygon points="16,32 22,30 22,34" fill="#FF8F00"/>
+    <polygon points="16,33 22,33 20,36" fill="#E65100"/>
+    <!-- wattle -->
+    <ellipse cx="21" cy="37" rx="3" ry="5" fill="${wattleColor}"/>
+    <!-- proud chest puff -->
+    <ellipse cx="32" cy="50" rx="6" ry="4" fill="${breastColor}" opacity="0.5"/>
+    <!-- legs -->
+    <line x1="32" y1="78" x2="28" y2="86" stroke="#FF8F00" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="28" y1="86" x2="24" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="28" y1="86" x2="31" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="44" y1="78" x2="48" y2="86" stroke="#FF8F00" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="48" y1="86" x2="44" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="48" y1="86" x2="51" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <!-- spur -->
+    <line x1="28" y1="84" x2="24" y2="82" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgHen(name, bodyColor, wingColor, combColor, combStyle, spots) {
+  // Plump, round hen with small comb variations
+  const combSvg = combStyle === 'rose'
+    ? `<ellipse cx="32" cy="20" rx="6" ry="4" fill="${combColor}"/><ellipse cx="28" cy="22" rx="3" ry="3" fill="${combColor}"/>`
+    : combStyle === 'pea'
+    ? `<circle cx="28" cy="20" r="3" fill="${combColor}"/><circle cx="32" cy="18" r="3.5" fill="${combColor}"/><circle cx="36" cy="20" r="3" fill="${combColor}"/>`
+    : `<path d="M26,22 Q28,14 31,20 Q33,13 36,20 L36,24 Q31,25 26,24 Z" fill="${combColor}"/>`;
+
+  const spotsSvg = spots ? spots.map(s =>
+    `<circle cx="${s[0]}" cy="${s[1]}" r="${s[2]}" fill="${s[3]}" opacity="0.35"/>`
+  ).join('') : '';
+
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- plump body -->
+    <ellipse cx="40" cy="60" rx="25" ry="22" fill="${bodyColor}"/>
+    ${spotsSvg}
+    <!-- breast highlight -->
+    <ellipse cx="38" cy="58" rx="18" ry="16" fill="${wingColor}" opacity="0.3"/>
+    <!-- wing -->
+    <ellipse cx="52" cy="58" rx="14" ry="16" fill="${wingColor}" transform="rotate(-5 52 58)"/>
+    <path d="M50,48 L58,52 L56,58 L52,62 L48,56 Z" fill="${bodyColor}" opacity="0.4"/>
+    <!-- small tail -->
+    <path d="M58,48 Q65,38 62,32" stroke="${wingColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M60,50 Q68,42 64,36" stroke="${bodyColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- neck -->
+    <ellipse cx="30" cy="42" rx="10" ry="12" fill="${bodyColor}"/>
+    <!-- head -->
+    <circle cx="30" cy="30" r="12" fill="${bodyColor}"/>
+    <circle cx="30" cy="29" r="10" fill="${wingColor}" opacity="0.2"/>
+    <!-- comb -->
+    ${combSvg}
+    <!-- eye -->
+    <ellipse cx="26" cy="29" rx="3.5" ry="4" fill="#1a1a2e"/>
+    <circle cx="25" cy="28" r="1.5" fill="white"/>
+    <!-- beak -->
+    <polygon points="18,32 24,30 24,34" fill="#FF8F00"/>
+    <!-- blush -->
+    <ellipse cx="22" cy="34" rx="3" ry="2" fill="#ff8a80" opacity="0.45"/>
+    <!-- wattle -->
+    <ellipse cx="23" cy="36" rx="2" ry="3" fill="${combColor}" opacity="0.7"/>
+    <!-- feet -->
+    <line x1="34" y1="80" x2="30" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="87" x2="27" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="30" y1="87" x2="33" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="46" y1="80" x2="50" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="50" y1="87" x2="47" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="50" y1="87" x2="53" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgSilkie(name, bodyColor, fluffColor) {
+  // Silkie breed - extremely fluffy, pom-pom head, feathered feet, can't see eyes well
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- ultra fluffy body -->
+    <ellipse cx="40" cy="62" rx="26" ry="22" fill="${bodyColor}"/>
+    <circle cx="28" cy="55" r="10" fill="${fluffColor}" opacity="0.5"/>
+    <circle cx="52" cy="55" r="10" fill="${fluffColor}" opacity="0.5"/>
+    <circle cx="40" cy="72" r="10" fill="${fluffColor}" opacity="0.4"/>
+    <circle cx="30" cy="68" r="8" fill="${bodyColor}" opacity="0.6"/>
+    <circle cx="50" cy="68" r="8" fill="${bodyColor}" opacity="0.6"/>
+    <!-- fluffy wings (extra poofy) -->
+    <circle cx="18" cy="60" r="10" fill="${fluffColor}" opacity="0.6"/>
+    <circle cx="62" cy="60" r="10" fill="${fluffColor}" opacity="0.6"/>
+    <!-- fluffy head -->
+    <circle cx="40" cy="35" r="14" fill="${bodyColor}"/>
+    <!-- pom-pom crest (signature silkie look!) -->
+    <circle cx="36" cy="22" r="6" fill="${fluffColor}"/>
+    <circle cx="44" cy="22" r="6" fill="${fluffColor}"/>
+    <circle cx="40" cy="19" r="7" fill="${bodyColor}"/>
+    <circle cx="34" cy="24" r="5" fill="${bodyColor}" opacity="0.8"/>
+    <circle cx="46" cy="24" r="5" fill="${bodyColor}" opacity="0.8"/>
+    <circle cx="40" cy="16" r="5" fill="${fluffColor}" opacity="0.8"/>
+    <!-- eyes peeking through fluff -->
+    <ellipse cx="35" cy="34" rx="3" ry="3.5" fill="#1a1a2e"/>
+    <circle cx="34" cy="33" r="1.2" fill="white"/>
+    <ellipse cx="45" cy="34" rx="3" ry="3.5" fill="#1a1a2e"/>
+    <circle cx="44" cy="33" r="1.2" fill="white"/>
+    <!-- tiny beak -->
+    <polygon points="38,39 42,39 40,43" fill="#555"/>
+    <!-- blush -->
+    <ellipse cx="30" cy="38" rx="3" ry="2" fill="#ff8a80" opacity="0.4"/>
+    <ellipse cx="50" cy="38" rx="3" ry="2" fill="#ff8a80" opacity="0.4"/>
+    <!-- feathered feet (silkie trait!) -->
+    <ellipse cx="32" cy="84" rx="6" ry="4" fill="${fluffColor}" opacity="0.7"/>
+    <ellipse cx="48" cy="84" rx="6" ry="4" fill="${fluffColor}" opacity="0.7"/>
+    <line x1="32" y1="82" x2="32" y2="86" stroke="#777" stroke-width="1.5"/>
+    <line x1="48" y1="82" x2="48" y2="86" stroke="#777" stroke-width="1.5"/>
+  </svg>`;
+}
+
+function svgPolish(name, bodyColor, crestColor, bodyAccent) {
+  // Polish breed - dramatic top-hat feather crest, can barely see
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- body -->
+    <ellipse cx="40" cy="62" rx="23" ry="20" fill="${bodyColor}"/>
+    <!-- laced feather pattern -->
+    <ellipse cx="33" cy="58" rx="8" ry="7" fill="none" stroke="${bodyAccent}" stroke-width="1" opacity="0.4"/>
+    <ellipse cx="47" cy="58" rx="8" ry="7" fill="none" stroke="${bodyAccent}" stroke-width="1" opacity="0.4"/>
+    <ellipse cx="40" cy="68" rx="8" ry="6" fill="none" stroke="${bodyAccent}" stroke-width="1" opacity="0.4"/>
+    <!-- wing -->
+    <ellipse cx="54" cy="60" rx="12" ry="14" fill="${bodyAccent}" opacity="0.3" transform="rotate(-5 54 60)"/>
+    <!-- small tail -->
+    <path d="M56,48 Q64,38 60,30" stroke="${bodyColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- neck -->
+    <ellipse cx="32" cy="44" rx="9" ry="11" fill="${bodyColor}"/>
+    <!-- head -->
+    <circle cx="32" cy="32" r="11" fill="${bodyColor}"/>
+    <!-- HUGE feather crest (the star feature!) -->
+    <circle cx="28" cy="18" r="6" fill="${crestColor}"/>
+    <circle cx="36" cy="16" r="7" fill="${crestColor}"/>
+    <circle cx="32" cy="14" r="6" fill="${crestColor}"/>
+    <circle cx="24" cy="20" r="5" fill="${crestColor}" opacity="0.9"/>
+    <circle cx="40" cy="18" r="5" fill="${crestColor}" opacity="0.9"/>
+    <circle cx="32" cy="11" r="5" fill="${crestColor}" opacity="0.8"/>
+    <circle cx="28" cy="13" r="4" fill="${crestColor}" opacity="0.7"/>
+    <circle cx="38" cy="14" r="4" fill="${crestColor}" opacity="0.7"/>
+    <!-- eyes barely visible under crest -->
+    <ellipse cx="28" cy="32" rx="3" ry="3.5" fill="#1a1a2e"/>
+    <circle cx="27" cy="31" r="1.3" fill="white"/>
+    <!-- beak -->
+    <polygon points="20,34 26,32 26,36" fill="#FF8F00"/>
+    <!-- blush -->
+    <ellipse cx="24" cy="36" rx="3" ry="2" fill="#ff8a80" opacity="0.4"/>
+    <!-- feet -->
+    <line x1="34" y1="80" x2="30" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="87" x2="27" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="30" y1="87" x2="33" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="46" y1="80" x2="50" y2="87" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="50" y1="87" x2="47" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="50" y1="87" x2="53" y2="88" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgBantam(name, bodyColor, wingColor, combColor) {
+  // Bantam - tiny and round like a puffball, short legs, very smol
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- very round tiny body -->
+    <circle cx="40" cy="60" r="22" fill="${bodyColor}"/>
+    <circle cx="40" cy="58" r="18" fill="${wingColor}" opacity="0.25"/>
+    <!-- tiny rounded wing -->
+    <ellipse cx="54" cy="58" rx="10" ry="12" fill="${wingColor}" opacity="0.5"/>
+    <!-- very round head -->
+    <circle cx="34" cy="38" r="13" fill="${bodyColor}"/>
+    <circle cx="34" cy="37" r="11" fill="${wingColor}" opacity="0.15"/>
+    <!-- small neat comb -->
+    <path d="M28,28 Q30,22 33,26 Q35,21 38,27 L37,30 Q33,31 28,30 Z" fill="${combColor}"/>
+    <!-- big adorable eye -->
+    <ellipse cx="30" cy="37" rx="4" ry="4.5" fill="#1a1a2e"/>
+    <circle cx="29" cy="36" r="1.8" fill="white"/>
+    <circle cx="31" cy="39" r="0.8" fill="white" opacity="0.5"/>
+    <!-- beak -->
+    <polygon points="22,40 28,38 28,42" fill="#FF8F00"/>
+    <!-- blush -->
+    <ellipse cx="25" cy="42" rx="3" ry="2" fill="#ff8a80" opacity="0.5"/>
+    <!-- teeny tail -->
+    <path d="M56,50 Q62,42 60,36" stroke="${wingColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- wattle -->
+    <ellipse cx="27" cy="44" rx="2" ry="2.5" fill="${combColor}" opacity="0.6"/>
+    <!-- short stubby legs -->
+    <line x1="34" y1="80" x2="32" y2="86" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="32" y1="86" x2="29" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="32" y1="86" x2="34" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="46" y1="80" x2="48" y2="86" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="48" y1="86" x2="46" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="48" y1="86" x2="51" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgGamebird(name, bodyColor, neckColor, tailColor, faceColor) {
+  // Gamebird / Jungle Fowl - sleek, iridescent, athletic build
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- sleek body -->
+    <ellipse cx="40" cy="60" rx="22" ry="18" fill="${bodyColor}"/>
+    <!-- iridescent breast -->
+    <ellipse cx="34" cy="56" rx="14" ry="14" fill="${neckColor}" opacity="0.4"/>
+    <!-- sleek wing with detail -->
+    <ellipse cx="52" cy="58" rx="14" ry="14" fill="${bodyColor}" opacity="0.8"/>
+    <path d="M46,50 L58,54 L56,62 L50,66 L44,58 Z" fill="${tailColor}" opacity="0.25"/>
+    <!-- long elegant tail -->
+    <path d="M56,52 Q72,35 68,18" stroke="${tailColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M58,54 Q74,40 72,24" stroke="${neckColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M54,50 Q68,30 64,14" stroke="${bodyColor}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <!-- neck -->
+    <ellipse cx="30" cy="42" rx="9" ry="12" fill="${neckColor}"/>
+    <!-- head -->
+    <circle cx="28" cy="30" r="11" fill="${neckColor}"/>
+    <!-- face patch -->
+    <circle cx="24" cy="30" r="5" fill="${faceColor}" opacity="0.5"/>
+    <!-- small sharp comb -->
+    <path d="M24,20 Q26,14 29,19 Q31,14 33,20 L32,24 Q28,25 24,24 Z" fill="#E53935"/>
+    <!-- fierce but cute eye -->
+    <ellipse cx="24" cy="29" rx="3" ry="3.5" fill="#1a1a2e"/>
+    <circle cx="23" cy="28" r="1.5" fill="white"/>
+    <!-- sharp beak -->
+    <polygon points="16,31 22,29 22,33" fill="#BF360C"/>
+    <!-- wattle -->
+    <ellipse cx="21" cy="35" rx="2.5" ry="4" fill="#E53935" opacity="0.7"/>
+    <!-- athletic legs -->
+    <line x1="34" y1="76" x2="30" y2="85" stroke="#BF360C" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="30" y1="85" x2="26" y2="87" stroke="#BF360C" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="85" x2="33" y2="87" stroke="#BF360C" stroke-width="2" stroke-linecap="round"/>
+    <line x1="46" y1="76" x2="50" y2="85" stroke="#BF360C" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="50" y1="85" x2="47" y2="87" stroke="#BF360C" stroke-width="2" stroke-linecap="round"/>
+    <line x1="50" y1="85" x2="53" y2="87" stroke="#BF360C" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgFrizzle(name, bodyColor, frizzleColor) {
+  // Frizzle - feathers that curl outward, wild and fluffy look
+  return `<svg viewBox="0 0 80 90" width="80" height="90">
+    <!-- body with curled feathers -->
+    <ellipse cx="40" cy="60" rx="24" ry="20" fill="${bodyColor}"/>
+    <!-- frizzled feathers curling outward -->
+    <path d="M18,52 Q12,48 16,44" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M16,58 Q10,56 13,50" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M18,66 Q12,66 14,60" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M62,52 Q68,48 64,44" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M64,58 Q70,56 67,50" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M62,66 Q68,66 66,60" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- curled tail feathers -->
+    <path d="M56,46 Q66,36 60,28 Q58,32 62,38" stroke="${frizzleColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M58,50 Q70,42 64,32 Q62,36 66,42" stroke="${bodyColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- neck -->
+    <ellipse cx="30" cy="44" rx="10" ry="12" fill="${bodyColor}"/>
+    <!-- frizzled neck feathers -->
+    <path d="M22,40 Q16,36 20,32" stroke="${frizzleColor}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M20,46 Q14,44 18,38" stroke="${frizzleColor}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- head -->
+    <circle cx="30" cy="32" r="12" fill="${bodyColor}"/>
+    <!-- messy head feathers -->
+    <path d="M26,22 Q22,14 28,18" stroke="${frizzleColor}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M32,20 Q30,12 36,16" stroke="${frizzleColor}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M36,22 Q38,14 40,20" stroke="${frizzleColor}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- small comb peeking through -->
+    <circle cx="30" cy="22" r="3" fill="#E53935"/>
+    <!-- eye -->
+    <ellipse cx="26" cy="31" rx="3.5" ry="4" fill="#1a1a2e"/>
+    <circle cx="25" cy="30" r="1.5" fill="white"/>
+    <!-- beak -->
+    <polygon points="18,34 24,32 24,36" fill="#FF8F00"/>
+    <!-- blush -->
+    <ellipse cx="22" cy="36" rx="3" ry="2" fill="#ff8a80" opacity="0.4"/>
+    <!-- feet -->
+    <line x1="34" y1="78" x2="30" y2="86" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="86" x2="27" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="30" y1="86" x2="33" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="46" y1="78" x2="50" y2="86" stroke="#FF8F00" stroke-width="2" stroke-linecap="round"/>
+    <line x1="50" y1="86" x2="47" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="50" y1="86" x2="53" y2="87" stroke="#FF8F00" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ── Chicken data ──────────────────────────────────────────────────
+
+const CHICKENS = [
+  {
+    name: "Peep",
+    breed: "Baby Chick",
+    getSvg() { return svgChick("Peep", "#FFF176", "#FFFDE7", "#ff8a80"); }
+  },
+  {
+    name: "Buttercup",
+    breed: "Baby Chick",
+    getSvg() { return svgChick("Buttercup", "#FFE082", "#FFF8E1", "#ffab91"); }
+  },
+  {
+    name: "Rex",
+    breed: "Rooster",
+    getSvg() { return svgRooster("Rex", "#C62828", "#FF8A65", ["#1B5E20","#0D47A1","#4A148C"], "#FF1744", "#FF1744"); }
+  },
+  {
+    name: "Duke",
+    breed: "Rooster",
+    getSvg() { return svgRooster("Duke", "#BF360C", "#FFB74D", ["#E65100","#FF6F00","#F57F17"], "#D50000", "#D50000"); }
+  },
+  {
+    name: "Rosie",
+    breed: "Rhode Island Red",
+    getSvg() { return svgHen("Rosie", "#A1562C", "#C97B4B", "#E53935", "single", null); }
+  },
+  {
+    name: "Pearl",
+    breed: "White Leghorn",
+    getSvg() { return svgHen("Pearl", "#F5F5F5", "#E0E0E0", "#FF1744", "pea", null); }
+  },
+  {
+    name: "Pepper",
+    breed: "Speckled Sussex",
+    getSvg() { return svgHen("Pepper", "#8D6E63", "#A1887F", "#EF5350", "rose",
+      [[35,55,3,"#5D4037"],[45,62,2.5,"#4E342E"],[30,65,2,"#5D4037"],[50,55,2,"#3E2723"],[40,70,2.5,"#5D4037"]]
+    ); }
+  },
+  {
+    name: "Snowball",
+    breed: "White Silkie",
+    getSvg() { return svgSilkie("Snowball", "#FAFAFA", "#E0E0E0"); }
+  },
+  {
+    name: "Truffle",
+    breed: "Black Silkie",
+    getSvg() { return svgSilkie("Truffle", "#424242", "#616161"); }
+  },
+  {
+    name: "Fifi",
+    breed: "Polish",
+    getSvg() { return svgPolish("Fifi", "#F5F5F5", "#212121", "#BDBDBD"); }
+  },
+  {
+    name: "Dot",
+    breed: "Bantam",
+    getSvg() { return svgBantam("Dot", "#FFE0B2", "#FFCC80", "#EF5350"); }
+  },
+  {
+    name: "Phoenix",
+    breed: "Jungle Fowl",
+    getSvg() { return svgGamebird("Phoenix", "#5D4037", "#1B5E20", "#BF360C", "#F44336"); }
+  },
+  {
+    name: "Ziggy",
+    breed: "Frizzle",
+    getSvg() { return svgFrizzle("Ziggy", "#FF8A65", "#BF360C"); }
+  },
+  {
+    name: "Poppy",
+    breed: "Frizzle",
+    getSvg() { return svgFrizzle("Poppy", "#CE93D8", "#7B1FA2"); }
+  },
+  {
+    name: "Clover",
+    breed: "Ameraucana",
+    getSvg() { return svgHen("Clover", "#78909C", "#90A4AE", "#E91E63", "pea",
+      [[36,54,2.5,"#546E7A"],[48,60,2,"#455A64"],[32,66,2,"#546E7A"]]
+    ); }
+  },
+  {
+    name: "Nugget",
+    breed: "Buff Orpington",
+    getSvg() { return svgHen("Nugget", "#FFCC80", "#FFE0B2", "#FF7043", "single", null); }
+  },
+];
+
+// ── Game logic ────────────────────────────────────────────────────
+
+let gameState = {
+  pairs: 4, moves: 0, matched: 0, flipped: [], locked: false,
+  timer: null, seconds: 0, started: false
+};
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function startGame(pairs) {
+  if (gameState.timer) clearInterval(gameState.timer);
+  gameState = { pairs, moves: 0, matched: 0, flipped: [], locked: false, timer: null, seconds: 0, started: false };
+
+  document.querySelectorAll('.level-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', [4,6,8,12,16][i] === pairs);
+  });
+
+  document.getElementById('moves-stat').textContent = 'Moves: 0';
+  document.getElementById('pairs-stat').textContent = `Pairs: 0 / ${pairs}`;
+  document.getElementById('time-stat').textContent = 'Time: 0s';
+
+  const board = document.getElementById('board');
+  board.className = `board size-${pairs}`;
+  board.innerHTML = '';
+
+  const selected = shuffle([...CHICKENS]).slice(0, pairs);
+  const cards = shuffle([...selected, ...selected]);
+
+  cards.forEach((chicken, index) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.index = index;
+    card.dataset.name = chicken.name;
+
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-back">
+          <div class="egg">🥚</div>
+          <div class="q-mark">who's inside?</div>
+        </div>
+        <div class="card-front">
+          <div class="chicken-holder">${chicken.getSvg()}</div>
+          <div class="chicken-name">${chicken.name}</div>
+          <div class="chicken-breed">${chicken.breed}</div>
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => flipCard(card));
+    board.appendChild(card);
+  });
+
+  document.getElementById('win-overlay').classList.remove('show');
+}
+
+function flipCard(card) {
+  if (gameState.locked) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+  if (!gameState.started) {
+    gameState.started = true;
+    gameState.timer = setInterval(() => {
+      gameState.seconds++;
+      document.getElementById('time-stat').textContent = `Time: ${gameState.seconds}s`;
+    }, 1000);
+  }
+
+  card.classList.add('flipped');
+  playCluck();
+  gameState.flipped.push(card);
+
+  if (gameState.flipped.length === 2) {
+    gameState.moves++;
+    document.getElementById('moves-stat').textContent = `Moves: ${gameState.moves}`;
+
+    const [a, b] = gameState.flipped;
+    if (a.dataset.name === b.dataset.name) {
+      a.classList.add('matched');
+      b.classList.add('matched');
+      gameState.matched++;
+      document.getElementById('pairs-stat').textContent = `Pairs: ${gameState.matched} / ${gameState.pairs}`;
+      gameState.flipped = [];
+      playMatch();
+      spawnFeathers(3);
+      if (gameState.matched === gameState.pairs) {
+        clearInterval(gameState.timer);
+        setTimeout(showWin, 700);
+      }
+    } else {
+      gameState.locked = true;
+      setTimeout(() => {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        gameState.flipped = [];
+        gameState.locked = false;
+      }, 900);
+    }
+  }
+}
+
+function showWin() {
+  const overlay = document.getElementById('win-overlay');
+  const stars = document.getElementById('stars');
+  const msg = document.getElementById('win-msg');
+
+  const ratio = gameState.moves / gameState.pairs;
+  let starCount, message;
+  if (ratio <= 1.5) { starCount = 3; message = "Perfect memory, Helen! You're a chicken whisperer!"; }
+  else if (ratio <= 2.5) { starCount = 2; message = "Great job, Helen! The chickens are impressed!"; }
+  else { starCount = 1; message = "You found them all, Helen! Keep practicing!"; }
+
+  stars.textContent = '\u2B50'.repeat(starCount) + '\u2606'.repeat(3 - starCount);
+  msg.textContent = `${message}\n${gameState.moves} moves in ${gameState.seconds}s`;
+  awardEgg();
+  overlay.classList.add('show');
+}
+
+function restartGame() { startGame(gameState.pairs); }
+
+// ── Audio ─────────────────────────────────────────────────────────
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// iOS requires AudioContext to be resumed after a user gesture
+function ensureAudio() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+document.addEventListener('touchstart', ensureAudio, { once: true });
+document.addEventListener('click', ensureAudio, { once: true });
+
+function playCluck() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.setValueAtTime(800 + Math.random() * 400, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+  osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.12);
+}
+
+function playMatch() {
+  [0, 0.1, 0.2].forEach((delay, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime([523, 659, 784][i], audioCtx.currentTime + delay);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.2);
+    osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + 0.2);
+  });
+}
+
+function spawnFeathers(count) {
+  const emojis = ['\uD83E\uDEB6', '\u2728', '\uD83D\uDC9B'];
+  for (let i = 0; i < count; i++) {
+    const f = document.createElement('div');
+    f.className = 'feather';
+    f.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    f.style.left = (Math.random() * 100) + '%';
+    f.style.animationDuration = (3 + Math.random() * 3) + 's';
+    f.style.animationDelay = (Math.random() * 0.5) + 's';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 6000);
+  }
+}
+
+setInterval(() => { if (Math.random() > 0.6) spawnFeathers(1); }, 3000);
+
+renderNest();
+startGame(4);
+</script>
+</body>
+</html>
