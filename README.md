@@ -8,7 +8,7 @@ A cute chicken-themed memory matching game, built as a Mother's Day gift.
 
 Flip cards to reveal chickens and find matching pairs. The fewer moves you take, the more stars you earn! Complete puzzles to collect decorative eggs for your nest.
 
-**Difficulty levels:** Easy (4 pairs) through Extreme (16 pairs), featuring 16 unique chicken breeds including Silkies, Polish, Frizzles, Bantams, and more — all hand-drawn in SVG.
+**Difficulty levels:** Easy (4 pairs) through Eggstreme (16 pairs), featuring 16 unique chicken breeds including Silkies, Polish, Frizzles, Bantams, and more — all hand-drawn in SVG.
 
 ## Features
 

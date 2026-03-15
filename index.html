@@ -304,8 +304,8 @@
   <button class="level-btn active" onclick="startGame(4)">Easy (4 pairs)</button>
   <button class="level-btn" onclick="startGame(6)">Medium (6 pairs)</button>
   <button class="level-btn" onclick="startGame(8)">Hard (8 pairs)</button>
-  <button class="level-btn" onclick="startGame(12)">Expert (12 pairs)</button>
-  <button class="level-btn" onclick="startGame(16)">Extreme (16 pairs)</button>
+  <button class="level-btn" onclick="startGame(12)">Eggspert (12 pairs)</button>
+  <button class="level-btn" onclick="startGame(16)">Eggstreme (16 pairs)</button>
 </div>
 
 <div class="fence">
@@ -367,12 +367,12 @@ const EGG_TYPES = [
   { name: "Berry Egg", diff: 8, base: "#F3E5F5", spot: "#8E24AA", accent: "#E040FB", pattern: "polka" },
   { name: "Coral Egg", diff: 8, base: "#FBE9E7", spot: "#FF5722", accent: "#FF8A65", pattern: "polka" },
   { name: "Forest Egg", diff: 8, base: "#E8F5E9", spot: "#2E7D32", accent: "#66BB6A", pattern: "polka" },
-  // Expert eggs - zigzag
+  // Eggspert eggs - zigzag
   { name: "Thunder Egg", diff: 12, base: "#ECEFF1", spot: "#FFD600", accent: "#546E7A", pattern: "zigzag" },
   { name: "Flame Egg", diff: 12, base: "#FFF3E0", spot: "#FF3D00", accent: "#FF9100", pattern: "zigzag" },
   { name: "Arctic Egg", diff: 12, base: "#E1F5FE", spot: "#0288D1", accent: "#81D4FA", pattern: "zigzag" },
   { name: "Jungle Egg", diff: 12, base: "#F1F8E9", spot: "#33691E", accent: "#9CCC65", pattern: "zigzag" },
-  // Extreme eggs - golden / rainbow
+  // Eggstreme eggs - golden / rainbow
   { name: "Golden Egg", diff: 16, base: "#FFF8E1", spot: "#FFD700", accent: "#FFA000", pattern: "golden" },
   { name: "Rainbow Egg", diff: 16, base: "#FFFFFF", spot: "#E91E63", accent: "#2196F3", pattern: "rainbow" },
   { name: "Crystal Egg", diff: 16, base: "#E8EAF6", spot: "#7C4DFF", accent: "#448AFF", pattern: "crystal" },
@@ -500,7 +500,7 @@ function hideEggTooltip() {
 }
 
 function awardEgg() {
-  const levelNames = { 4: 'Easy', 6: 'Medium', 8: 'Hard', 12: 'Expert', 16: 'Extreme' };
+  const levelNames = { 4: 'Easy', 6: 'Medium', 8: 'Hard', 12: 'Eggspert', 16: 'Eggstreme' };
   const available = EGG_TYPES.filter(e => e.diff === gameState.pairs);
   const egg = { ...available[Math.floor(Math.random() * available.length)] };
   egg.levelName = levelNames[gameState.pairs] || '???';
