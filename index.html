@@ -449,6 +449,8 @@ function getEggSvg(egg, size = 32) {
   </svg>`;
 }
 
+const sessionEggs = [];
+
 function loadEggCollection() {
   try { return JSON.parse(localStorage.getItem('clucky_eggs') || '[]'); }
   catch { return []; }
@@ -460,7 +462,7 @@ function saveEggCollection(eggs) {
 
 function renderNest() {
   const nest = document.getElementById('nest');
-  const eggs = loadEggCollection();
+  const eggs = sessionEggs;
   if (eggs.length === 0) {
     nest.innerHTML = '<div class="nest-empty">Complete a puzzle to earn your first egg, Helen!</div>';
     return;
@@ -506,6 +508,7 @@ function awardEgg() {
   egg.levelName = levelNames[gameState.pairs] || '???';
   egg.wonAt = Date.now();
 
+  sessionEggs.push(egg);
   const eggs = loadEggCollection();
   eggs.push(egg);
   saveEggCollection(eggs);
